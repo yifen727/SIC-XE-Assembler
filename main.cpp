@@ -10,6 +10,7 @@ struct NODE
     string loc;
     string obj;
     int format;
+    int w_count;
 };
 NODE assem[600]; // 最多讀600行
 string type2[] = {"CLEAR", "COMPR", "TIXR"};
@@ -22,15 +23,12 @@ int total_line = 0;
 
 int string_to_int(string s) // for decimal
 {
-    // cout << s << endl;
     int d = 1, ans = 0;
     for (int i = s.length() - 1; i >= 0; i--)
     {
-        // cout << s[i] << endl;
         ans += d * (s[i] - '0');
         d *= 10;
     }
-    // cout << ans << endl;
     return ans;
 }
 int search_type2(string s)
@@ -239,12 +237,10 @@ void show()
 }
 int main()
 {
-    // int result = addNumbers(5, 7); // 使用你的函數
-    // std::cout << "The sum is: " << result << std::endl;
-    std::ofstream ofs;
+    ofstream ofs;
     string input_file_name;
-    // cout << "Please enter the inputfile name:";
-    // cin >> input_file_name;
+    cout << "Please enter the inputfile name:";
+    cin >> input_file_name;
     ofs.open("output.txt");
     if (!ofs.is_open())
     {
@@ -252,31 +248,127 @@ int main()
         return 1; // EXIT_FAILURE
     }
     //
-    ifstream input_file;
+    // ifstream input_file;
     // input_file.open(input_file_name);
-    input_file.open("assembly_code.txt");
-    string line;
-    string symbol_str, inst_str, ref_str;
+    // input_file.open("assembly_code.txt"); // for my test
+    // string line;
+    // string symbol_str, inst_str, ref_str;
+    // int i = 0;
+    // while (getline(input_file, line))
+    // {
+    //     stringstream str(line);
+    //     getline(str, symbol_str, '\t');
+    //     getline(str, inst_str, '\t');
+    //     getline(str, ref_str, '\t');
+    //     // cout << symbol_str << " " << inst_str << " " << ref_str << endl;
+    //     assem[i].symbol = symbol_str;
+    //     assem[i].inst = inst_str;
+    //     assem[i].ref = ref_str;
+    //     assem[i].format = 3;
+    //     i++;
+    // }
+    //================================================
+    ifstream input_file;
+    // string input_file_name;
+    input_file.open(input_file_name);
+    string line, word;
+
+    if (!input_file.is_open())
+    {
+        cout << "cannot open" << endl;
+    }
     int i = 0;
     while (getline(input_file, line))
     {
-        stringstream str(line);
-        getline(str, symbol_str, '\t');
-        getline(str, inst_str, '\t');
-        getline(str, ref_str, '\t');
-        // cout << symbol_str << " " << inst_str << " " << ref_str << endl;
-        assem[i].symbol = symbol_str;
-        assem[i].inst = inst_str;
-        assem[i].ref = ref_str;
-        assem[i].format = 3;
+        istringstream iss(line);
+        int wordCount = 0; // 計算單詞數量
+        while (iss >> word)
+        {
+            ++wordCount;
+        }
+        // cout << "wordcount " << wordCount << endl;
+        // 再次分解並輸出內容
+        assem[i].w_count = wordCount;
         i++;
     }
+    input_file.close();
+    input_file.open(input_file_name);
+    if (!input_file.is_open())
+    {
+        cout << "cannot open" << endl;
+    }
 
-    // cout << "==============" << endl;
+    string symbol_str, inst_str, ref_str;
+    i = 0;
+    while (getline(input_file, line))
+    {
+        // cout << "i=" << i << endl;
+        stringstream str(line);
+        int j = 1;
+        if (assem[i].w_count == 2)
+        {
+            istringstream iss(line);
+            while (iss >> word)
+            {
+                if (j == 1)
+                    assem[i].inst = word;
+                else if (j == 2)
+                    assem[i].ref = word;
+                j++;
+            }
+            assem[i].symbol = "";
+        }
+        else if (assem[i].w_count == 1)
+        {
+            istringstream iss(line);
+            while (iss >> word)
+            {
+                assem[i].inst = word;
+            }
+        }
+        else if (assem[i].w_count == 3)
+        {
+            // cout << "3" << endl;
+            // getline(str, symbol_str, '\t');
+            // getline(str, inst_str, '\t');
+            // getline(str, ref_str, '\t');
+            // cout << symbol_str << endl;
+            // cout << inst_str << endl;
+            // cout << symbol_str << " " << inst_str << " " << ref_str << endl;
+            // assem[i].inst = inst_str;
+            // assem[i].ref = ref_str;
+            // assem[i].symbol = symbol_str;
+            // cout << "i=" << i << endl;
+            istringstream iss(line);
+            while (iss >> word)
+            {
+                if (j == 1)
+                    assem[i].symbol = word;
+                else if (j == 2)
+                    assem[i].inst = word;
+                else if (j == 3)
+                {
+                    assem[i].ref = word;
+                }
+                j++;
+            }
+        }
+        // ofs << assem[i].symbol << " " << assem[i].inst << " " << assem[i].ref << endl;
+        // assem[i].format = 3;
+        // cout << "assem[0].inst=" << assem[0].inst << endl;
+        i++;
+    }
+    //===============================================
+
+    input_file.close();
+    // for (int j = 0; j < i; j++)
+    // {
+    //     ofs << "j= " << j << " " << assem[j].symbol << " " << assem[j].inst << " " << assem[j].ref << endl;
+    // }
     total_line = i;
     // show();
     // cout << "i=" << i << endl;
-    input_file.close();
+
     // 決定起始位置
     if ((assem[0].ref).length() == 1)
     {
@@ -290,10 +382,10 @@ int main()
     {
         assem[0].loc = assem[1].loc = '0' + assem[0].ref;
     }
-    // cout << assem[0].loc << endl;
-    // cout << "assem[1].loc " << assem[1].loc << endl;
+    // cout << "total_line " << total_line << endl;
     for (int i = 1; i < total_line; i++)
     {
+        // cout << assem[i].inst << endl;
         int done = 0;
         if (assem[i + 1].symbol == "" && assem[i + 1].inst == "" && assem[i + 1].ref == "")
         {
@@ -302,7 +394,6 @@ int main()
         if (assem[i].inst == "")
             break;
         int add;
-        // cout << assem[i].inst << endl;
 
         if (assem[i].inst[0] == '+')
         {
@@ -356,7 +447,6 @@ int main()
         {
             add = 3;
         }
-
         //
         // 將LOC轉成10進位
         int temp = hex_to_dec(assem[i].loc);
@@ -383,7 +473,7 @@ int main()
                 assem[i + 1].loc = "0" + assem[i + 1].loc;
             }
         }
-        // ofs << "i=" << i << " " << assem[i].loc << " " << assem[i].symbol << " " << assem[i].inst << " " << assem[i].ref << endl;
+        // ofs << " loc i=" << i << " " << assem[i].loc << " " << assem[i].symbol << " " << assem[i].inst << " " << assem[i].ref << endl;
     }
     // ofs << "----------------------" << endl;
     // do obj
@@ -600,7 +690,6 @@ int main()
             }
         }
     }
-    ofs << "=====================================" << endl;
     for (int i = 0; i < total_line; i++)
     {
         // ofs << "i=" << i << " " << assem[i].loc << " " << assem[i].symbol << " " << assem[i].inst << " " << assem[i].ref << " -----" << assem[i].obj << endl;
@@ -611,7 +700,7 @@ int main()
         ofs << setw(10) << setfill(' ') << assem[i].obj << endl;
     }
     //============================object program===========================================
-    std::ofstream ofs1;
+    ofstream ofs1;
     // cout << "Please enter the inputfile name:";
     // cin >> input_file_name;
     ofs1.open("object_program.txt");
@@ -642,8 +731,8 @@ int main()
         program_length = "00" + program_length;
     else if (program_length.length() == 5)
         program_length = "0" + program_length;
-    cout << program_length << endl;
-    cout << head_r << endl;
+    // cout << program_length << endl;
+    // cout << head_r << endl;
     head_r = "H^" + head_r + "^" + start_add + "^" + program_length;
     ofs1 << head_r << endl;
     string end_r = "E^" + start_add;
@@ -669,7 +758,7 @@ int main()
             }
             if (t_r_length + assem[i].obj.length() / 2 >= 30)
             {
-                cout << "t_r_length " << t_r_length << "   assem[i].obj.length() " << assem[i].obj.length() << endl;
+                // cout << "t_r_length " << t_r_length << "   assem[i].obj.length() " << assem[i].obj.length() << endl;
                 t_r_length = 0;
                 flag = 1;
                 last_add = assem[i + 1].loc;
@@ -720,7 +809,6 @@ int main()
             }
         }
     }
-    // sdfsdfsdfdsf
     //-----------------m_record----------------------
     vector<string> m_r;
     for (int i = 0; i < total_line; i++)
@@ -759,6 +847,7 @@ int main()
         ofs1 << m_r[i];
     }
     ofs1 << end_r << endl;
+    cout << "finished!" << endl;
 
     return 0;
 }
